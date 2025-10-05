@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Panel - Renobix Pro</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="wrap">
+    <h1>Panel de Renobix Pro</h1>
+    <div id="info"></div>
+    <button id="btnLogout">Salir</button>
+  </main>
+
+  <script>
+    async function load() {
+      const token = localStorage.getItem('rb_token');
+      if (!token) return window.location = '/';
+      try {
+        const res = await fetch('/api/me', { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok) throw new Error('No autorizado');
+        const data = await res.json();
+        document.getElementById('info').innerHTML = '<p>Bienvenido, ' + (data.name || data.email) + '</p><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+      } catch (err) {
+        localStorage.removeItem('rb_token');
+        window.location = '/';
+      }
+    }
+    document.getElementById('btnLogout').addEventListener('click', () => {
+      localStorage.removeItem('rb_token');
+      window.location = '/';
+    });
+    load();
+  </script>
+</body>
+</html>
