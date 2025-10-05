@@ -16,9 +16,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'cambia_esto_por_un_secreto_largo';
 const DATA_DIR = path.join(__dirname, 'data');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 
+// Crear carpeta y archivo de usuarios si no existen
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
 if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, JSON.stringify([]));
 
+// 📁 Funciones de utilidad
 function readUsers() {
   const raw = fs.readFileSync(USERS_FILE, 'utf8');
   return JSON.parse(raw || '[]');
@@ -31,6 +33,7 @@ function generateToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
+// 🛡️ Middleware de autenticación
 function authMiddleware(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth) return res.status(401).json({ message: 'No token' });
@@ -44,6 +47,7 @@ function authMiddleware(req, res, next) {
   }
 }
 
+// 📌 Registrar usuario
 app.post('/api/register', async (req, res) => {
   const { email, password, name } = req.body;
   if (!email || !password) return res.status(400).json({ message: 'Faltan campos' });
@@ -71,6 +75,7 @@ app.post('/api/register', async (req, res) => {
   res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
 });
 
+// 📌 Login
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   const users = readUsers();
@@ -84,6 +89,7 @@ app.post('/api/login', async (req, res) => {
   res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
 });
 
+// 📌 Obtener perfil del usuario
 app.get('/api/me', authMiddleware, (req, res) => {
   const users = readUsers();
   const u = users.find(x => x.id === req.user.id);
@@ -91,11 +97,13 @@ app.get('/api/me', authMiddleware, (req, res) => {
   res.json({ id: u.id, email: u.email, name: u.name, createdAt: u.createdAt });
 });
 
+// 📁 Servir archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
+// 📁 Enviar index.html por defecto
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server listening on ${PORT}`));
+// 🚀 Exportar app para Vercel (IMPORTANTE)
+module.exports = app;
